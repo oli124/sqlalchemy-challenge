@@ -40,8 +40,8 @@ def home():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end>"
+        f"/api/v1.0/yyyymmdd<br/>"
+        f"/api/v1.0/yyyymmdd/yyyymmdd"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -105,43 +105,71 @@ def tobs():
          
     return jsonify(date_tobs_dict)
 
-# @app.route("/api/v1.0/<start>")
-# def start_date(start):
-#     # Create our session (link) from Python to the DB
-#     session = Session(engine)
+@app.route("/api/v1.0/<start_date>")
+def start(start_date = None):
 
-#     """Return a list of min, avg, and max temperature for specified date range"""
-#     # Query all dates and tobs data points
+ # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    """Return a list of min, avg, and max temperature for specified date range"""
+    # Query all dates and tobs data points
     
-#     # Define year ago point
-#     start_date = dt.date(2017, 1, 1)
-
-#     min_temp = session.query(func.min(Measurement.tobs)).\
-#     filter(Measurement.date > start_date).all()
-
-#     max_temp = session.query(func.max(Measurement.tobs)).\
-#     filter(Measurement.date > start_date).all()
-
-#     avg_temp = session.query(func.avg(Measurement.tobs)).\
-#     filter(Measurement.date > start_date).all()
-
-#     print(f'The lowest temperature after {start_date} was {min_temp[0][0]}')
-#     print(f'The highest temperature after {start_date} was {max_temp[0][0]}')
-#     print(f'The average temperature after {start_date} was {round(avg_temp[0][0],1)}')
+    # Define year ago point
+    start_date = dt.datetime.strptime(start_date, "%Y%m%d")
     
-#     # Define most active station
-#     most_act_station = session.query(Measurement.station, func.count(Measurement.station)).\
-#     group_by(Measurement.station).\
-#     order_by(func.count(Measurement.station).desc()).all()
+    min_temp = session.query(func.min(Measurement.tobs)).\
+    filter(Measurement.date > start_date).all()
 
-#     # Query date and tobs with filters
-#     date_tobs_query = session.query(Measurement.date, Measurement.tobs).filter(Measurement.station == most_act_station[0][0]).filter(Measurement.date > year_ago).all()
+    max_temp = session.query(func.max(Measurement.tobs)).\
+    filter(Measurement.date > start_date).all()
 
-#     date_tobs_dict = dict(date_tobs_query)
+    avg_temp = session.query(func.avg(Measurement.tobs)).\
+    filter(Measurement.date > start_date).all()
+    
+    date_tobs_start = {
+        'Minimum temperature': min_temp[0][0],
+        'Maximum temperature': max_temp[0][0],
+        'Average temperature': avg_temp[0][0]
+    }
 
-#     session.close()
+    session.close()
          
-#     return jsonify(date_tobs_dict)
+    return jsonify(date_tobs_start)
+
+@app.route("/api/v1.0/<start>/<end>")
+def start_end(start = None, end = None):
+        
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    """Return a list of min, avg, and max temperature for specified date range"""
+    # Query all dates and tobs data points
+    
+    # Define year ago point
+    start_date = dt.datetime.strptime(start, "%Y%m%d")
+    end_date = dt.datetime.strptime(end, "%Y%m%d")
+
+    min_temp = session.query(func.min(Measurement.tobs)).\
+    filter(Measurement.date > start_date).\
+    filter(Measurement.date < end_date).all()
+
+    max_temp = session.query(func.max(Measurement.tobs)).\
+    filter(Measurement.date > start_date).\
+    filter(Measurement.date < end_date).all()
+
+    avg_temp = session.query(func.avg(Measurement.tobs)).\
+    filter(Measurement.date > start_date).\
+    filter(Measurement.date < end_date).all()
+    
+    date_tobs_start_end = {
+        'Minimum temperature': min_temp[0][0],
+        'Maximum temperature': max_temp[0][0],
+        'Average temperature': avg_temp[0][0]
+    }
+
+    session.close()
+         
+    return jsonify(date_tobs_start_end)
 
 
 if __name__ == '__main__':
